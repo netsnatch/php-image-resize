@@ -3,7 +3,7 @@ php-image-resize
 
 PHP library to resize, scale and crop images.
 
-[![Build Status](https://travis-ci.org/eventviva/php-image-resize.svg?branch=master)](https://travis-ci.org/eventviva/php-image-resize) [![Latest Stable Version](https://poser.pugx.org/eventviva/php-image-resize/v/stable)](https://packagist.org/packages/eventviva/php-image-resize) [![Monthly Downloads](https://poser.pugx.org/eventviva/php-image-resize/d/monthly)](https://packagist.org/packages/eventviva/php-image-resize)
+[![Build Status](https://travis-ci.org/gumlet/php-image-resize.svg?branch=master)](https://travis-ci.org/gumlet/php-image-resize) [![Latest Stable Version](https://poser.pugx.org/gumlet/php-image-resize/v/stable)](https://packagist.org/packages/gumlet/php-image-resize) [![Monthly Downloads](https://poser.pugx.org/gumlet/php-image-resize/d/monthly)](https://packagist.org/packages/gumlet/php-image-resize)
 
 Hosted Solution
 ---------------
@@ -22,10 +22,12 @@ If using [Composer](https://getcomposer.org/), in your `composer.json` file add:
 ```json
 {
     "require": {
-        "eventviva/php-image-resize": "1.6.*"
+        "gumlet/php-image-resize": "1.8.*"
     }
 }
 ```
+
+If you are still using PHP 5.3, please install version ```1.7.0``` or below of this library.
 
 Otherwise:
 
@@ -36,14 +38,14 @@ include '/path/to/ImageResize.php';
 Because this class uses namespacing, when instantiating the object, you need to either use the fully qualified namespace:
 
 ```php
-$image = new \Eventviva\ImageResize();
+$image = new \Gumlet\ImageResize();
 ```
 
 Or alias it:
 
 ```php
 
-use \Eventviva\ImageResize;
+use \Gumlet\ImageResize;
 
 $image = new ImageResize();
 ```
@@ -129,9 +131,9 @@ In the case of the example above, an image of 400px &times; 600px will be resize
 
 Crop modes:
 
-Few crop mode options are available in order for you to choose how you want to handle the eventual exceeding width or height after resizing down your image. 
+Few crop mode options are available in order for you to choose how you want to handle the eventual exceeding width or height after resizing down your image.
 The default crop mode used is the `CROPCENTER`.
-As a result those pieces of code are equivalent: 
+As a result those pieces of code are equivalent:
 
 ```php
 $image = new ImageResize('image.jpg');
@@ -269,7 +271,7 @@ By default, [image interlacing](http://php.net/manual/en/function.imageinterlace
 $image = new ImageResize('image.jpg');
 $image->scale(50);
 $image->interlace = 0;
-$image->save('image2.jpg')
+$image->save('image2.jpg');
 ```
 
 Chaining
@@ -305,14 +307,58 @@ try{
     $image = new ImageResize(null);
     echo "This line will not be printed";
 } catch (ImageResizeException $e) {
-    echo "Something went wrong" . $e->getMessage();  
+    echo "Something went wrong" . $e->getMessage();
 }
 ```
- 
+
+Filters
+--------
+
+You can apply special effects for new image like blur or add banner.
+
+```php
+$image = new ImageResize('image.jpg');
+
+// Add blure
+$image->addFilter(function ($imageDesc) {
+    imagefilter($imageDesc, IMG_FILTER_GAUSSIAN_BLUR);
+});
+
+// Add banner on bottom left corner
+$image18Plus = 'banner.png'
+$image->addFilter(function ($imageDesc) use ($image18Plus) {
+    $logo = imagecreatefrompng($image18Plus);
+    $logo_width = imagesx($logo);
+    $logo_height = imagesy($logo);
+    $image_width = imagesx($imageDesc);
+    $image_height = imagesy($imageDesc);
+    $image_x = $image_width - $logo_width - 10;
+    $image_y = $image_height - $logo_height - 10;
+    imagecopy($imageDesc, $logo, $image_x, $image_y, 0, 0, $logo_width, $logo_height);
+});
+
+```
+
+Flip
+--------
+
+Flips an image using a given mode and this method is only for PHP version 5.4.
+
+```php
+$flip = new ImageResize('image.png');
+$image = imagecreatetruecolor(200, 100);
+
+$flip->imageFlip($image, 0);
+
+```
+
+Both functions will be used in the order in which they were added.
+
+
 API Doc
 -------
 
-https://eventviva.github.io/php-image-resize/class-Eventviva.ImageResize.html
+https://gumlet.github.io/php-image-resize/index.html
 
 ------------------
 

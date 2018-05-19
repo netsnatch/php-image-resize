@@ -1,15 +1,10 @@
 <?php
 
-include __DIR__.'/../lib/ImageResize.php';
+use \Gumlet\ImageResize;
+use \Gumlet\ImageResizeException;
+use \PHPUnit\Framework\TestCase;
 
-use \Eventviva\ImageResize;
-use \Eventviva\ImageResizeException;
-
-if (version_compare(PHP_VERSION, '7.0.0') >= 0 && !class_exists('PHPUnit_Framework_TestCase')) {
-    class_alias('PHPUnit\Framework\TestCase', 'PHPUnit_Framework_TestCase');
-}
-
-class ImageResizeTest extends PHPUnit_Framework_TestCase
+class ImageResizeTest extends TestCase
 {
 
     private $image_types = array(
@@ -32,7 +27,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
         $resize = new ImageResize($image);
 
         $this->assertEquals(IMAGETYPE_GIF, $resize->source_type);
-        $this->assertInstanceOf('\Eventviva\ImageResize', $resize);
+        $this->assertInstanceOf('\Gumlet\ImageResize', $resize);
     }
 
     public function testLoadJpg()
@@ -41,16 +36,16 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
         $resize = new ImageResize($image);
 
         $this->assertEquals(IMAGETYPE_JPEG, $resize->source_type);
-        $this->assertInstanceOf('\Eventviva\ImageResize', $resize);
+        $this->assertInstanceOf('\Gumlet\ImageResize', $resize);
     }
-    
+
     public function testLoadIgnoreXmpExifJpg()
     {
         $image = __DIR__.'/ressources/test_xmp.jpg';
         $resize = new ImageResize($image);
 
         $this->assertEquals(IMAGETYPE_JPEG, $resize->source_type);
-        $this->assertInstanceOf('\Eventviva\ImageResize', $resize);
+        $this->assertInstanceOf('\Gumlet\ImageResize', $resize);
     }
 
     public function testLoadPng()
@@ -59,7 +54,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
         $resize = new ImageResize($image);
 
         $this->assertEquals(IMAGETYPE_PNG, $resize->source_type);
-        $this->assertInstanceOf('\Eventviva\ImageResize', $resize);
+        $this->assertInstanceOf('\Gumlet\ImageResize', $resize);
     }
 
     public function testLoadString()
@@ -67,7 +62,26 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
         $resize = ImageResize::createFromString(base64_decode($this->image_string));
 
         $this->assertEquals(IMAGETYPE_GIF, $resize->source_type);
-        $this->assertInstanceOf('\Eventviva\ImageResize', $resize);
+        $this->assertInstanceOf('\Gumlet\ImageResize', $resize);
+    }
+
+    public function testAddFilter()
+    {
+        $image = $this->createImage(1, 1, 'png');
+        $resize = new ImageResize($image);
+        $filename = $this->getTempFile();
+
+        $this->assertInstanceOf('\Gumlet\ImageResize', $resize->addFilter('imagefilter'));
+    }
+
+    public function testApplyFilter()
+    {
+        $image = $this->createImage(1, 1, 'png');
+        $resize = new ImageResize($image);
+        $resize->addFilter('imagefilter');
+        $filename = $this->getTempFile();
+
+        $this->assertInstanceOf('\Gumlet\ImageResize', $resize->save($filename));
     }
 
     /**
@@ -75,7 +89,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
      */
 
     /**
-     * @expectedException \Eventviva\ImageResizeException
+     * @expectedException \Gumlet\ImageResizeException
      * @expectedExceptionMessage File does not exist
      */
     public function testLoadNoFile()
@@ -84,7 +98,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Eventviva\ImageResizeException
+     * @expectedException \Gumlet\ImageResizeException
      * @expectedExceptionMessage Unsupported file type
      */
     public function testLoadUnsupportedFile()
@@ -93,7 +107,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Eventviva\ImageResizeException
+     * @expectedException \Gumlet\ImageResizeException
      * @expectedExceptionMessage image_data must not be empty
      */
     public function testLoadUnsupportedFileString()
@@ -102,7 +116,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Eventviva\ImageResizeException
+     * @expectedException \Gumlet\ImageResizeException
      * @expectedExceptionMessage Unsupported image type
      */
     public function testLoadUnsupportedImage()
@@ -117,7 +131,7 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \Eventviva\ImageResizeException
+     * @expectedException \Gumlet\ImageResizeException
      * @expectedExceptionMessage Unsupported image type
      */
     public function testInvalidString()
@@ -275,6 +289,16 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals(50, $resize->getDestWidth());
         $this->assertEquals(50, $resize->getDestHeight());
+
+        $resize->freecrop(50, 50);
+
+        $this->assertEquals(50, $resize->getDestWidth());
+        $this->assertEquals(50, $resize->getDestHeight());
+
+        $resize->freecrop(300, 300, 1, 1);
+
+        $this->assertEquals(300, $resize->getDestWidth());
+        $this->assertEquals(300, $resize->getDestHeight());
     }
 
     public function testCropPosition()
@@ -284,11 +308,27 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
 
         $resize->crop(50, 50, false, $resize::CROPRIGHT);
 
-        $reflection_class = new ReflectionClass('\Eventviva\ImageResize');
+        $reflection_class = new ReflectionClass('\Gumlet\ImageResize');
         $source_x = $reflection_class->getProperty('source_x');
         $source_x->setAccessible(true);
 
         $this->assertEquals(100, $source_x->getValue($resize));
+
+        $resize->crop(50, 50, false, $resize::CROPCENTRE);
+
+        $reflection_class = new ReflectionClass('\Gumlet\ImageResize');
+        $source_x = $reflection_class->getProperty('source_x');
+        $source_x->setAccessible(true);
+
+        $this->assertEquals(50, $source_x->getValue($resize));
+
+        $resize->crop(50, 50, false, $resize::CROPTOPCENTER);
+
+        $reflection_class = new ReflectionClass('\Gumlet\ImageResize');
+        $source_x = $reflection_class->getProperty('source_x');
+        $source_x->setAccessible(true);
+
+        $this->assertEquals(25, $source_x->getValue($resize));
     }
 
     public function testCropLargerNotAllowed()
@@ -302,6 +342,21 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(100, $resize->getDestHeight());
     }
 
+    /**
+     * Image flip tests
+     */
+
+    public function testImageFlip()
+    {
+        $imageFileName = $this->createImage(200, 100, 'png');
+        $resize = new ImageResize($imageFileName);
+        $image = imagecreatetruecolor(200, 100);
+
+        $this::assertNull($resize->imageFlip($image, 0));
+        $this::assertNull($resize->imageFlip($image, 1));
+        $this::assertNull($resize->imageFlip($image, 2));
+        $this->assertNull($resize->imageFlip($image, 3));
+    }
 
     /**
      * Save tests
@@ -470,42 +525,3 @@ class ImageResizeTest extends PHPUnit_Framework_TestCase
     }
 
 }
-
-class ImageResizeExceptionTest extends PHPUnit_Framework_TestCase
-{
-    public function testExceptionEmpty()
-    {
-        $e = new ImageResizeException();
-    
-        $this->assertEquals("", $e->getMessage());
-        $this->assertInstanceOf('\Eventviva\ImageResizeException', $e);
-    }
-    
-    public function testExceptionMessage()
-    {
-        $e = new ImageResizeException("General error");
-    
-        $this->assertEquals("General error", $e->getMessage());
-        $this->assertInstanceOf('\Eventviva\ImageResizeException', $e);
-    }
-    
-    public function testExceptionExtending()
-    {
-        $e = new ImageResizeException("General error");
-        
-        $this->assertInstanceOf('\Exception', $e);
-    }
-    
-    public function testExceptionThrown()
-    {
-        try{
-            throw new ImageResizeException("General error");
-        } catch (\Exception $e) {
-            $this->assertEquals("General error", $e->getMessage());
-            $this->assertInstanceOf('\Eventviva\ImageResizeException', $e);
-            return;
-        }
-        $this->fail();
-    }
-}
-// It's pretty easy to get your attention these days, isn't it? :D
